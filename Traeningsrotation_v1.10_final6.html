@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1f2937">
+<title>Træningsrotation</title>
+<style>
+:root{font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;color:#172033;background:#f3f4f6}
+html{min-height:100%;background:#f3f4f6}
+*{box-sizing:border-box}
+body{margin:0;padding:10px;max-width:620px;margin-inline:auto;min-height:100dvh;background:#f3f4f6}
+.card{background:white;border-radius:14px;padding:14px;margin-bottom:10px;box-shadow:0 1px 4px #0001}
+.title{font-size:13px;color:#6b7280;margin-bottom:3px}
+.next{font-size:26px;font-weight:750;margin-bottom:4px}
+.small{font-size:13px;color:#6b7280}
+.tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:10px}
+.tab{border:0;border-radius:10px;padding:10px 4px;background:#e5e7eb;font-weight:650}
+.tab.active{background:#1f2937;color:white}
+button{font:inherit;cursor:pointer}
+.done{background:#e5e7eb;color:#374151}
+.done.ready{background:#16a34a;color:white}
+.group{width:100%;text-align:left;border:1px solid #e5e7eb;background:white;border-radius:10px;padding:10px 12px;margin:5px 0}
+.group.selected{border:2px solid #2563eb;background:#eff6ff}
+.section{display:none}
+.section.active{display:block}
+.row{display:flex;gap:8px;flex-wrap:wrap}
+.action{border:0;border-radius:9px;padding:10px 12px;background:#e5e7eb}
+.action.primary{background:#2563eb;color:white}
+.action.danger{background:#fee2e2;color:#991b1b}
+textarea{width:100%;min-height:180px;border:1px solid #d1d5db;border-radius:10px;padding:10px;font:inherit}
+.history{border-bottom:1px solid #eee;padding:9px 0}
+.empty{text-align:center;color:#6b7280;padding:20px}
+.app-version{text-align:center;color:#9ca3af;font-size:10px;padding:12px 0 4px}
+.theme-toggle{margin-top:8px}
+.edit-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px;align-items:stretch}
+.edit-actions .action{width:100%;height:42px;min-height:42px;margin:0;padding:0 8px;font-size:13px;display:flex;align-items:center;justify-content:center}
+html:has(body.dark){background:#111827}
+body.dark{background:#111827;color:#f3f4f6}
+body.dark .card{background:#1f2937;box-shadow:0 1px 4px #0006}
+body.dark .title,body.dark .small{color:#9ca3af}
+body.dark .tab{background:#374151;color:#e5e7eb}
+body.dark .tab.active{background:#f3f4f6;color:#111827}
+body.dark .group{background:#1f2937;color:#f3f4f6;border-color:#374151}
+body.dark .group.selected{background:#172554;border-color:#60a5fa}
+body.dark .done{background:#374151;color:#e5e7eb}
+body.dark .done.ready{background:#16a34a;color:white}
+body.dark .action{background:#374151;color:#f3f4f6}
+body.dark .action.primary{background:#2563eb;color:white}
+body.dark .action.danger{background:#7f1d1d;color:#fecaca}
+body.dark textarea{background:#111827;color:#f3f4f6;border-color:#4b5563}
+body.dark .history{border-color:#374151}
+body.dark .empty{color:#9ca3af}
+input[type=file]{display:none}
+
+/* v1.8: identical UI for rotation and cardio buttons */
+.action-row{display:grid!important;grid-template-columns:1fr 1fr!important;gap:8px!important;margin-top:8px!important}
+.action-row button,.action-row .done,.action-row .cardio{
+  width:100%!important;height:46px!important;min-height:46px!important;
+  margin:0!important;padding:8px!important;border:0!important;
+  border-radius:10px!important;font:inherit!important;font-size:13px!important;
+  font-weight:700!important;display:flex!important;
+  align-items:center!important;justify-content:center!important;
+}
+.action-row .done{background:#e5e7eb!important;color:#374151!important}
+.action-row .done.ready{background:#16a34a!important;color:white!important}
+.action-row .cardio{background:#e5e7eb!important;color:#374151!important}
+.action-row .cardio.registered{background:#16a34a!important;color:white!important}
+body.dark .action-row .cardio.registered{background:#16a34a!important;color:white!important}
+.action-row button:disabled{opacity:1!important}
+body.dark .action-row .done{background:#374151!important;color:#e5e7eb!important}
+body.dark .action-row .done.ready{background:#16a34a!important;color:white!important}
+body.dark .action-row .cardio{background:#374151!important;color:#e5e7eb!important}
+</style>
+</head>
+<body>
+
+<div class="card">
+  <div class="title">TRÆNINGSROTATION</div>
+  <div id="next" class="next"></div>
+  <div id="last" class="small"></div>
+  <div class="action-row">
+    <button id="done" class="done"></button>
+    <button id="cardio" class="cardio" type="button">Cardio</button>
+  </div>
+</div>
+
+<div class="tabs">
+  <button class="tab active" data-tab="order">Rækkefølge</button>
+  <button class="tab" data-tab="history">Historik</button>
+  <button class="tab" data-tab="edit">Rediger</button>
+</div>
+
+<section id="order" class="section active">
+  <div class="card">
+    <div class="title">Vælg den muskelgruppe du træner</div>
+    <div id="groups"></div>
+    <div class="row">
+      <button id="undo" class="action">↶ Fortryd</button>
+      <button id="reset" class="action danger">Nulstil rotation</button>
+    </div>
+  </div>
+</section>
+
+<section id="history" class="section">
+  <div class="card">
+    <div class="title">Historik · sidste 6 måneder</div>
+    <div id="historyList"></div>
+  </div>
+</section>
+
+<section id="edit" class="section">
+  <div class="card">
+    <div class="title">Én muskelgruppe pr. linje</div>
+    <textarea id="groupEditor"></textarea>
+    <div class="row" style="margin-top:8px">
+      <button id="saveGroups" class="action primary">Gem grupper</button>
+    </div>
+  </div>
+  <div class="card" id="appearanceCard">
+    <div class="title">INDSTILLINGER</div>
+    <div id="themeCurrent" class="small" style="margin-bottom:8px">Aktuel tilstand: Light mode</div>
+    <div class="edit-actions">
+      <button id="themeToggle" class="action primary theme-toggle" type="button">Dark mode</button>
+      <button id="clearData" class="action danger" type="button">Ryd</button>
+    </div>
+  </div>
+  <div class="card">
+    <div class="title">Backup</div>
+    <div class="small" style="margin-bottom:8px">Eksporter alle data til én JSON-fil. Importér filen på en anden telefon for at fortsætte.</div>
+    <div class="row">
+      <button id="export" class="action primary">Eksporter</button>
+      <label class="action" for="importFile">Importer</label>
+      <input id="importFile" type="file" accept=".json,application/json">
+    </div>
+  </div>
+</section>
+
+<script>
+const KEY="traeningsrotation-v2";
+const defaultGroups=["Bryst+Triceps","Ryg+Biceps","Ben","Skuldre","Underarme","Nakke+Dødløft"];
+
+let state=load();
+state.groups=state.groups.map(g=>{
+  const known={
+    "bryst+triceps":"Bryst+Triceps",
+    "ryg+biceps":"Ryg+Biceps",
+    "ben":"Ben",
+    "skuldre":"Skuldre",
+    "underarme":"Underarme",
+    "nakke+dødløft":"Nakke+Dødløft"
+  };
+  return known[g] || g;
+});
+save();
+let selectedIndex=state.nextIndex;
+
+function load(){
+  try{
+    const x=JSON.parse(localStorage.getItem(KEY));
+    if(x && Array.isArray(x.groups) && x.groups.length) return x;
+  }catch(e){}
+  return {version:2,groups:defaultGroups,nextIndex:0,history:[]};
+}
+function save(){localStorage.setItem(KEY,JSON.stringify(state))}
+function fmt(iso){
+  const d=new Date(iso);
+  return new Intl.DateTimeFormat("da-DK",{weekday:"long",day:"numeric",month:"numeric",year:"numeric",hour:"2-digit",minute:"2-digit",second:"2-digit"}).format(d);
+}
+function loadTheme(){
+  const theme=localStorage.getItem("traeningsrotation-theme")||"light";
+  document.body.classList.toggle("dark",theme==="dark");
+  updateThemeButton();
+}
+function updateThemeButton(){
+  const b=document.getElementById("themeToggle");
+  const current=document.getElementById("themeCurrent");
+  if(!b)return;
+  const dark=document.body.classList.contains("dark");
+  b.textContent=dark ? "Light mode/dark mode" : "Light mode/dark mode";
+  if(current) current.textContent=dark ? "Aktuel tilstand: Dark mode" : "Aktuel tilstand: Light mode";
+}
+function toggleTheme(){
+  const dark=!document.body.classList.contains("dark");
+  document.body.classList.toggle("dark",dark);
+  localStorage.setItem("traeningsrotation-theme",dark?"dark":"light");
+  updateThemeButton();
+}
+function clearAppData(){
+  if(!confirm("Ryd alle Træningsrotation-data, inklusive historik og rækkefølge?\n\nLav en backup først, hvis du vil kunne gendanne dataene.")) return;
+  localStorage.removeItem(KEY);
+  localStorage.removeItem("traeningsrotation-theme");
+  state={version:2,groups:[...defaultGroups],nextIndex:0,history:[]};
+  selectedIndex=0;
+  document.body.classList.remove("dark");
+  updateThemeButton();
+  render();
+  alert("Appdata er ryddet.");
+}
+
+function render(){
+  if(!state.groups.length)return;
+  if(selectedIndex<0||selectedIndex>=state.groups.length)selectedIndex=state.nextIndex;
+  document.getElementById("next").textContent=state.groups[selectedIndex];
+  const last=state.history[state.history.length-1];
+  document.getElementById("last").textContent=last ? "Sidst gennemført: "+state.groups[last.groupIndex]+" · "+fmt(last.time) : "Ingen træning registreret endnu";
+  const done=document.getElementById("done");
+  done.textContent="○ "+state.groups[selectedIndex]+" ikke gennemført";
+  done.className="done";
+  const g=document.getElementById("groups");g.innerHTML="";
+  state.groups.forEach((name,i)=>{
+    const b=document.createElement("button");
+    b.className="group"+(i===selectedIndex?" selected":"");
+    b.textContent=(i===state.nextIndex?"▶ ":"")+name;
+    b.onclick=()=>{selectedIndex=i;render()};
+    g.appendChild(b);
+  });
+  document.getElementById("undo").disabled=state.history.length===0;
+  renderHistory();
+  document.getElementById("groupEditor").value=state.groups.join("\n");
+}
+function logCardio(){
+  state.history.push({type:"cardio",time:new Date().toISOString()});
+  save(); renderHistory();
+  const b=document.getElementById("cardio");
+  b.textContent="✓ Cardio registreret"; b.classList.add("registered"); b.disabled=true;
+  setTimeout(()=>{b.textContent="Cardio";b.classList.remove("registered");b.disabled=false},900);
+}
+function complete(){
+  const idx=selectedIndex;
+  const done=document.getElementById("done");
+
+  // Give immediate visual confirmation that the training was registered.
+  done.disabled=true;
+  done.textContent="✓ Træning gennemført";
+  done.className="done ready";
+
+  setTimeout(()=>{
+    state.history.push({
+      groupIndex:idx,
+      time:new Date().toISOString(),
+      previousNextIndex:state.nextIndex
+    });
+    state.nextIndex=(idx+1)%state.groups.length;
+    selectedIndex=state.nextIndex;
+    save();
+    render();
+
+    // The button was temporarily disabled during the confirmation state.
+    // render() updates its visual state, but explicitly re-enable it here.
+    done.disabled=false;
+
+    // Small transition when moving to the next muscle group.
+    const next=document.getElementById("next");
+    next.classList.remove("transition-in");
+    void next.offsetWidth;
+    next.classList.add("transition-in");
+  },900);
+}
+function undo(){
+  if(!state.history.length)return;
+  const last=state.history.pop();
+  if(last.type!=="cardio"){
+    state.nextIndex=last.previousNextIndex;
+    selectedIndex=state.nextIndex;
+  }
+  save();render();
+}
+function reset(){
+  if(!confirm("Nulstil rotationen til første muskelgruppe?"))return;
+  state.nextIndex=0;selectedIndex=0;save();render();
+}
+function renderHistory(){
+  const el=document.getElementById("historyList");
+  const cutoff=Date.now()-183*24*60*60*1000;
+  const rows=state.history.filter(x=>new Date(x.time).getTime()>=cutoff).slice().reverse();
+  el.innerHTML="";
+  if(!rows.length){el.innerHTML='<div class="empty">Ingen træning registreret de sidste 6 måneder.</div>';return}
+  rows.forEach(x=>{
+    const d=document.createElement("div");d.className="history";
+    if(x.type==="cardio"){
+      d.innerHTML="<strong>Cardio</strong><br><span class='small'>"+escapeHtml(fmt(x.time))+"</span>";
+    }else{
+      d.innerHTML="<strong>"+escapeHtml(state.groups[x.groupIndex]??"Ukendt gruppe")+"</strong><br><span class='small'>"+escapeHtml(fmt(x.time))+"</span>";
+    }
+    el.appendChild(d);
+  });
+}
+function escapeHtml(s){return String(s).replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]))}
+
+document.getElementById("themeToggle").onclick=toggleTheme;
+document.getElementById("clearData").onclick=clearAppData;
+document.getElementById("done").onclick=complete;document.getElementById("cardio").onclick=logCardio;
+document.getElementById("undo").onclick=undo;
+document.getElementById("reset").onclick=reset;
+
+document.querySelectorAll(".tab").forEach(t=>t.onclick=()=>{
+  document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));
+  document.querySelectorAll(".section").forEach(x=>x.classList.remove("active"));
+  t.classList.add("active");document.getElementById(t.dataset.tab).classList.add("active");
+});
+
+document.getElementById("saveGroups").onclick=()=>{
+  const groups=document.getElementById("groupEditor").value.split("\n").map(x=>x.trim()).filter(Boolean);
+  if(!groups.length){alert("Du skal have mindst én muskelgruppe.");return}
+  const currentName=state.groups[state.nextIndex];
+  state.groups=groups;
+  const same=groups.indexOf(currentName);
+  state.nextIndex=same>=0?same:0;
+  selectedIndex=state.nextIndex;
+  save();render();
+  alert("Muskelgrupper gemt.");
+};
+
+document.getElementById("export").onclick=()=>{
+  const blob=new Blob([JSON.stringify(state,null,2)],{type:"application/json"});
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(blob);
+  a.download="traeningsrotation-backup.json";
+  a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+};
+
+document.getElementById("importFile").onchange=async e=>{
+  const file=e.target.files[0];if(!file)return;
+  try{
+    const imported=JSON.parse(await file.text());
+    if(!Array.isArray(imported.groups)||!imported.groups.length||!Array.isArray(imported.history))throw new Error();
+    imported.nextIndex=Math.max(0,Math.min(Number(imported.nextIndex)||0,imported.groups.length-1));
+    state=imported;selectedIndex=state.nextIndex;save();render();alert("Backup importeret.");
+  }catch(err){alert("Filen kunne ikke importeres.")}
+  e.target.value="";
+};
+loadTheme();
+render();
+</script>
+
+<footer class="app-version">
+  Træningsrotation · Version 1.10 · Senest ændret 25.09.2026
+</footer>
+</body>
+</html>
